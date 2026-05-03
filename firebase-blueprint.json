@@ -1,0 +1,71 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile and onboarding information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "age": { "type": "string" },
+        "profession": { "type": "string" },
+        "state": { "type": "string" },
+        "preferredLanguage": { "type": "string" },
+        "onboarded": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Notice": {
+      "title": "Government Notice",
+      "description": "Simplified government notice metadata and content.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "authority": { "type": "string" },
+        "summary": { "type": "string" },
+        "simplifiedExplanation": { "type": "string" },
+        "deadline": { "type": "string" },
+        "eligibility": { "type": "string" },
+        "requiredDocuments": { "type": "array" },
+        "status": { "type": "string", "enum": ["processing", "completed", "error"] },
+        "originalText": { "type": "string" },
+        "originalImageUrl": { "type": "string" },
+        "language": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "status"]
+    },
+    "Task": {
+      "title": "Action Task",
+      "description": "A specific action step derived from a notice.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "noticeId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "dueDate": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "noticeId", "title"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Store user profile and personalization settings."
+    },
+    "/notices/{noticeId}": {
+      "schema": "Notice",
+      "description": "Store processed notices for users."
+    },
+    "/notices/{noticeId}/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Action items for a specific notice."
+    }
+  }
+}

@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common helpers
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // User Profile Rules
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.keys().hasAll(['uid', 'email']) &&
+               data.uid is string && data.uid.size() <= 128 &&
+               data.email is string && data.email.size() <= 256;
+      }
+
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'age', 'profession', 'state', 'preferredLanguage', 'onboarded'
+        ])
+      );
+    }
+
+    // Notice Rules
+    match /notices/{noticeId} {
+      function isValidNotice(data) {
+        return data.keys().hasAll(['userId', 'title', 'status']) &&
+               data.userId is string && data.title is string && data.status is string &&
+               data.title.size() <= 500;
+      }
+
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidNotice(incoming());
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && isValidNotice(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'authority', 'summary', 'simplifiedExplanation', 'deadline', 
+          'eligibility', 'requiredDocuments', 'status', 'language'
+        ])
+      );
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      // Notice Sub-tasks
+      match /tasks/{taskId} {
+        function isValidTask(data) {
+          return data.keys().hasAll(['title']) &&
+                 data.title is string;
+        }
+
+        function canAccessNotice() {
+          return isSignedIn() && get(/databases/$(database)/documents/notices/$(noticeId)).data.userId == request.auth.uid;
+        }
+
+        allow read: if canAccessNotice();
+        allow create: if canAccessNotice() && isValidTask(incoming());
+        allow update: if canAccessNotice() && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'title', 'description', 'dueDate'])
+        );
+        allow delete: if canAccessNotice();
+      }
+    }
+  }
+}

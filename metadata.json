@@ -1,0 +1,13 @@
+{
+  "name": "Government Notice Simplifier",
+  "description": "An AI-powered GovTech platform that transforms complex government notices into simple, actionable steps for citizens.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "AI Document Analysis",
+    "OCR OCR Extraction",
+    "Action Checklist Generator",
+    "Multilingual Support"
+  ]
+}
